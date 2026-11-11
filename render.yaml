@@ -1,0 +1,17 @@
+# Render Blueprint: https://render.com/docs/blueprint-spec
+services:
+  - type: web
+    name: course-finder
+    runtime: python
+    plan: free # 0.5c-512mb ($7/mo) keeps it always on
+    region: oregon # closest to WWU's Banner servers
+    buildCommand: >-
+      pip install -r backend/requirements.txt &&
+      npm ci --prefix frontend --include=dev &&
+      npm run build --prefix frontend
+    # one worker process so every request shares one Banner cache
+    startCommand: gunicorn --chdir backend --workers 1 --threads 8 --bind 0.0.0.0:$PORT app:app
+    healthCheckPath: /api/health
+    autoDeployTrigger: commit
+    domains:
+      - coursefinder.app # Render adds www.coursefinder.app as a redirect
